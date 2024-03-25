@@ -1,0 +1,13 @@
+Flask
+Flask-Cors
+PyPDF2
+pdf2image
+pytesseract
+PyMuPDF
+spacy
+en-legal-ner-trf @ https://huggingface.co/opennyaiorg/en_legal_ner_trf/resolve/main/en_legal_ner_trf-any-py3-none-any.whl
+fastapi 
+uvicorn 
+python-multipart
+pydantic
+pathlib
