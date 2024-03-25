@@ -34,8 +34,8 @@ async def get_api_key(api_key: str = Depends(api_key_header)):
 @app.post("/ner")
 #async def upload_pdf(key_data: KeyValidation, api_key: str = Depends(get_api_key)):
 async def upload_pdf(pdf_file: UploadFile =  File(..., media_type='application/pdf'), api_key: str = Depends(get_api_key)):
-    print(f"pdf_file: {pdf_file}")
-    print(api_key)
+    #print(f"pdf_file: {pdf_file}")
+    #print(api_key)
     print("Started API Execution")
     # Save the uploaded PDF
     pdf_path = Path("static/input") /pdf_file.filename
