@@ -1,0 +1,17 @@
+static/output/*
+static/input/*
+static/ocruploads/*
+static/qa_uploads/*
+static/uploads/*
+chroma.sqlite3
+venv
+.venv
+NER_app/.venv2
+.env
+__pycache__
+NER_app/__pycache__
+*.db
+*.pdf
+*.bin
+*.pickle
+.vscode
