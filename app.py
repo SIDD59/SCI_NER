@@ -32,16 +32,15 @@ async def get_api_key(api_key: str = Depends(api_key_header)):
         raise HTTPException(status_code=401, detail="Invalid API Key")
 
 @app.post("/ner")
-#async def upload_pdf(key_data: KeyValidation, api_key: str = Depends(get_api_key)):
 async def upload_pdf(pdf_file: UploadFile =  File(..., media_type='application/pdf'), api_key: str = Depends(get_api_key) , accuracy_ratio: int = Query(..., title="Accuracy Ratio to combine entities", ge=0, le=100)):
-
+    """
+    This API accepts a pdf file, api key and accuracy ratio an integer between 0-100 as inputs and outputs the combined entities and the page numbers the entities are found on in a json format.
+    """
     extension = os.path.splitext(pdf_file.filename)[1].lower()
 
     if extension != '.pdf':
        raise HTTPException(status_code=401, detail="In valid File Format. File Type should be PDF")
     else:
-        print(f"pdf_file: {pdf_file}")
-        print(api_key)
         print("Started API Execution")
         # Save the uploaded PDF
         pdf_path = Path("static/input") /pdf_file.filename
@@ -49,21 +48,20 @@ async def upload_pdf(pdf_file: UploadFile =  File(..., media_type='application/p
         with pdf_path.open("wb") as pdf    :
             pdf.write(pdf_file.file.read())
 
-        # Save the uploaded file directly to the ocruploads folder
+        # Save the uploaded file directly to the input folder
         inputfile_path = os.path.join(CONTENT_PATH, "input", pdf_file.filename)
         #pdf_file.save(inputfile_path)
         #print("Uploaded file:", pdf_file.filename)
 
         processedfile_name = pdf_file.filename.replace('.pdf', '_processed.pdf')
         processedfile_path = os.path.join(CONTENT_PATH, "output", processedfile_name)
-        print("Processed file:", processedfile_path)
+        #print("Processed file:", processedfile_path)
 
         outputfile_name = 'ner_output.pdf'
         outputfile_path = os.path.join(CONTENT_PATH, "output", outputfile_name)
-        print("Output filepath:", outputfile_path)
+        #print("Output filepath:", outputfile_path)
 
         # Consolidate entities page numbers, Convert and highlight PDF
-        #accuracy_ratio = 90
         final_formatted_data = ner.convert_and_highlight_pdf(inputfile_path, processedfile_path, outputfile_path, accuracy_ratio)
 
         return final_formatted_data

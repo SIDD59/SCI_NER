@@ -122,7 +122,7 @@ def process_pdf(input_file, output_file, accuracy_ratio):
             # Add the page number to the list for the entity
             entity_data_dict[(entity_label, entity_text)]['entity_data'].append([entity_text, pg+1])
     
-   
+    # Add entity_label as additional key
     formatted_data1 = []
     for (entity_label, entity_text), entity_data in entity_data_dict.items():
         formatted_data1.append({
@@ -156,7 +156,6 @@ def process_pdf(input_file, output_file, accuracy_ratio):
     for item in formatted_data3:
         formatted_data4.append({'entity_label': item['entity_label'], 'entity_data': combine_similar_entities(item['entity_data'], accuracy_ratio)})
    
-    #print(combined_data)
     # Save the output PDF
     #pdfDoc.save(output_file)
     pdfDoc.close()
@@ -197,7 +196,7 @@ def convert_and_highlight_pdf(uploaded_file_path, processed_path, output_path, a
     with open(processed_path, "wb") as f:
         pdf_writer.write(f)
 
-    # Process the processed PDF to highlight named entities
+    # Process the processed PDF to highlight and combine named entities
     final_formatted_data = process_pdf(processed_path, output_path, accuracy_ratio)
 
     os.remove(processed_path)
