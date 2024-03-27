@@ -11,3 +11,5 @@ uvicorn
 python-multipart
 pydantic
 pathlib
+fuzzywuzzy
+fuzzywuzzy[speedup]

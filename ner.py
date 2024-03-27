@@ -7,6 +7,8 @@ import fitz
 import spacy
 from collections import defaultdict
 import json
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
 
 CONTENT_PATH = os.environ["CONTENT_PATH"]
 
@@ -95,10 +97,10 @@ def highlight_entities(page):
             matches_found += 1   
     return matches_found
 
-def process_pdf(input_file, output_file):
+def process_pdf(input_file, output_file, accuracy_ratio):
     # Open the PDF
     pdfDoc = fitz.open(input_file)
-    #total_matches = 0
+    total_matches = 0
     print(f"page count: {pdfDoc.page_count}")
 
     # Initialize a dictionary to store the counts of matches for each entity type
@@ -120,25 +122,27 @@ def process_pdf(input_file, output_file):
             # Add the page number to the list for the entity
             entity_data_dict[(entity_label, entity_text)]['entity_data'].append([entity_text, pg+1])
     
-    formatted_data = []
+   
+    formatted_data1 = []
     for (entity_label, entity_text), entity_data in entity_data_dict.items():
-        formatted_data.append({
+        formatted_data1.append({
             'entity_label': entity_label,
             'entity_data': entity_data['entity_data']
         })
 
     # Group data by entity_label
-    grouped_data = {}
-    for item in formatted_data:
+    formatted_data2 = {}
+    for item in formatted_data1:
         label = item['entity_label']
         data = item['entity_data']
-        if label not in grouped_data:
-            grouped_data[label] = []
-        grouped_data[label].extend(data)
+        if label not in formatted_data2:
+            formatted_data2[label] = []
+        formatted_data2[label].extend(data)
 
+    
     # Combine page numbers for each entity_label and entity_data pair
-    final_formatted_data = []
-    for label, data in grouped_data.items():
+    formatted_data3 = []
+    for label, data in formatted_data2.items():
         entity_text_page_map = {}
         for text, page in data:
             if text not in entity_text_page_map:
@@ -146,14 +150,37 @@ def process_pdf(input_file, output_file):
             entity_text_page_map[text].append(page)
     
         formatted_entity_data = [[text, sorted(list((set(pages))))] for text, pages in entity_text_page_map.items()]
-        final_formatted_data.append({'entity_label': label, 'entity_data': formatted_entity_data})
+        formatted_data3.append({'entity_label': label, 'entity_data': formatted_entity_data})
+
+    formatted_data4 = []
+    for item in formatted_data3:
+        formatted_data4.append({'entity_label': item['entity_label'], 'entity_data': combine_similar_entities(item['entity_data'], accuracy_ratio)})
    
+    #print(combined_data)
     # Save the output PDF
     #pdfDoc.save(output_file)
     pdfDoc.close()
-    return final_formatted_data
+    return formatted_data4
 
-def convert_and_highlight_pdf(uploaded_file_path, processed_path, output_path):
+#Combine similar entities and their page number susing fuzzy ratio method
+def combine_similar_entities(entities, ratio_percentage):
+    combined_entities = []
+    for entity in entities:
+        found = False
+        for combined_entity in combined_entities:
+            for existing_entity in combined_entity:
+                ratio = fuzz.ratio(entity[0].lower().strip(), existing_entity[0].lower().strip())
+                if ratio > ratio_percentage :
+                    existing_entity[1].extend(entity[1])
+                    found = True
+                    break
+            if found:
+                break
+        if not found:
+            combined_entities.append([entity])
+    return combined_entities
+
+def convert_and_highlight_pdf(uploaded_file_path, processed_path, output_path, accuracy_ratio):
     # Convert PDF to images
     images = convert_from_path(uploaded_file_path)
 
@@ -171,7 +198,7 @@ def convert_and_highlight_pdf(uploaded_file_path, processed_path, output_path):
         pdf_writer.write(f)
 
     # Process the processed PDF to highlight named entities
-    final_formatted_data = process_pdf(processed_path, output_path)
+    final_formatted_data = process_pdf(processed_path, output_path, accuracy_ratio)
 
     os.remove(processed_path)
     print(final_formatted_data)

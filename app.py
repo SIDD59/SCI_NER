@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Query, Path
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 from pathlib import Path
@@ -33,34 +33,41 @@ async def get_api_key(api_key: str = Depends(api_key_header)):
 
 @app.post("/ner")
 #async def upload_pdf(key_data: KeyValidation, api_key: str = Depends(get_api_key)):
-async def upload_pdf(pdf_file: UploadFile =  File(..., media_type='application/pdf'), api_key: str = Depends(get_api_key)):
-    #print(f"pdf_file: {pdf_file}")
-    #print(api_key)
-    print("Started API Execution")
-    # Save the uploaded PDF
-    pdf_path = Path("static/input") /pdf_file.filename
-    print(pdf_path)
-    with pdf_path.open("wb") as pdf    :
-        pdf.write(pdf_file.file.read())
+async def upload_pdf(pdf_file: UploadFile =  File(..., media_type='application/pdf'), api_key: str = Depends(get_api_key) , accuracy_ratio: int = Query(..., title="Accuracy Ratio to combine entities", ge=0, le=100)):
 
+    extension = os.path.splitext(pdf_file.filename)[1].lower()
 
-    # Save the uploaded file directly to the ocruploads folder
-    inputfile_path = os.path.join(CONTENT_PATH, "input", pdf_file.filename)
-    #pdf_file.save(inputfile_path)
-    #print("Uploaded file:", pdf_file.filename)
+    if extension != '.pdf':
+       raise HTTPException(status_code=401, detail="In valid File Format. File Type should be PDF")
+    else:
+        print(f"pdf_file: {pdf_file}")
+        print(api_key)
+        print("Started API Execution")
+        # Save the uploaded PDF
+        pdf_path = Path("static/input") /pdf_file.filename
+        print(pdf_path)
+        with pdf_path.open("wb") as pdf    :
+            pdf.write(pdf_file.file.read())
 
-    processedfile_name = pdf_file.filename.replace('.pdf', '_processed.pdf')
-    processedfile_path = os.path.join(CONTENT_PATH, "output", processedfile_name)
-    print("Processed file:", processedfile_path)
+        # Save the uploaded file directly to the ocruploads folder
+        inputfile_path = os.path.join(CONTENT_PATH, "input", pdf_file.filename)
+        #pdf_file.save(inputfile_path)
+        #print("Uploaded file:", pdf_file.filename)
 
-    outputfile_name = 'ner_output.pdf'
-    outputfile_path = os.path.join(CONTENT_PATH, "output", outputfile_name)
-    print("Output filepath:", outputfile_path)
+        processedfile_name = pdf_file.filename.replace('.pdf', '_processed.pdf')
+        processedfile_path = os.path.join(CONTENT_PATH, "output", processedfile_name)
+        print("Processed file:", processedfile_path)
 
-    # Convert and highlight PDF
-    final_formatted_data = ner.convert_and_highlight_pdf(inputfile_path, processedfile_path, outputfile_path)
+        outputfile_name = 'ner_output.pdf'
+        outputfile_path = os.path.join(CONTENT_PATH, "output", outputfile_name)
+        print("Output filepath:", outputfile_path)
 
-    return final_formatted_data
+        # Consolidate entities page numbers, Convert and highlight PDF
+        #accuracy_ratio = 90
+        final_formatted_data = ner.convert_and_highlight_pdf(inputfile_path, processedfile_path, outputfile_path, accuracy_ratio)
+
+        return final_formatted_data
+
 
 if __name__ == "__main__":
     import uvicorn
