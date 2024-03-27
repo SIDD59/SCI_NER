@@ -163,14 +163,14 @@ def process_pdf(input_file, output_file, accuracy_ratio):
     return formatted_data4
 
 #Combine similar entities and their page number susing fuzzy ratio method
-def combine_similar_entities(entities, ratio_percentage):
+def combine_similar_entities(entities, accuracy_ratio):
     combined_entities = []
     for entity in entities:
         found = False
         for combined_entity in combined_entities:
             for existing_entity in combined_entity:
                 ratio = fuzz.ratio(entity[0].lower().strip(), existing_entity[0].lower().strip())
-                if ratio > ratio_percentage :
+                if ratio > accuracy_ratio :
                     existing_entity[1].extend(entity[1])
                     found = True
                     break
